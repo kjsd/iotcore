@@ -14,6 +14,14 @@
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
+const Datastore = require('@google-cloud/datastore');
+const datastore = new Datastore();
+
+const key = datastore.key('intervalSec');
+datastore.save({
+  key: key,
+  data: { val: 3600 }
+});
 
 if (process.env.NODE_ENV == 'production') {
   app.use(require('compression')());
@@ -39,18 +47,25 @@ const toDownlinkData = function(v) {
   return prefix + s;
 };
 
-let intervalSec = 3600;
 
 app.get('/interval', (req, res) => {
-  if (req.query.hasOwnProperty('set')) {
-    const v = parseInt(req.query.set);
-    if (!isNaN(v) && toDownlinkData(v)) {
-      intervalSec = v;
-    }
-  }
-  console.log(toDownlinkData(intervalSec));
+  datastore.get(key, function(err, entity) {
+    let intervalSec = entity.val;
 
-  res.send(intervalSec.toString());
+    if (req.query.hasOwnProperty('set')) {
+      const v = parseInt(req.query.set);
+      if (!isNaN(v) && toDownlinkData(v)) {
+        intervalSec = v;
+        datastore.save({
+          key: key,
+          data: { val: intervalSec }
+        });
+      }
+    }
+    console.log(toDownlinkData(intervalSec));
+
+    res.send(intervalSec.toString());
+  });
 });
 
 app.post('/:device', (req, res) => {
@@ -62,14 +77,18 @@ app.post('/:device', (req, res) => {
     return;
   }
 
-  const emptyData = '0000000000000000';
-  let downlink = new Object();
-  const data = toDownlinkData(intervalSec);
-  downlink[req.params.device] = {
-    'downlinkData': (data ? data: emptyData)
-  };
+  datastore.get(key, function(err, entity) {
+    let intervalSec = entity.val;
 
-  res.json(downlink);
+    const emptyData = '0000000000000000';
+    let downlink = new Object();
+    const data = toDownlinkData(intervalSec);
+    downlink[req.params.device] = {
+      'downlinkData': (data ? data: emptyData)
+    };
+
+    res.json(downlink);
+  });
 });
 
 const server = app.listen(process.env.PORT || '3000', function () {
