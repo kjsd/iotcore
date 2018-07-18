@@ -44,7 +44,10 @@ let intervalSec = 3600;
 
 app.get('/interval', (req, res) => {
   if (req.query.hasOwnProperty('set')) {
-    intervalSec = parseInt(req.query.set);
+    const v = parseInt(req.query.set);
+    if (!isNaN(v)) {
+      intervalSec = v;
+    }
   }
 
   res.send(intervalSec.toString());
