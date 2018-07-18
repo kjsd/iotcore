@@ -1,13 +1,11 @@
 /**
  * @file app.js
- *
- * @version $Id:$
- *
+*
  * @brief
  *
- * @author Kenji MINOURA / kenji@kandj.org
+ * @author Kenji MINOURA / info@kandj.org
  *
- * Copyright (c) 2016 K&J Software Design, Corp. All rights reserved.
+ * Copyright (c) 2018 K&J Software Design, Corp. All rights reserved.
  *
  * @see <related_items>
  ***********************************************************************/
