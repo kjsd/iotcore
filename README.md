@@ -1,1 +1,1 @@
-# timeclock
+# IoT Core - Sigfox callback server
