@@ -40,6 +40,16 @@ const toDownlinkData = function(v) {
   return s;
 };
 
+let intervalSec = 3600;
+
+app.get('/interval', (req, res) => {
+  if (req.query.hasOwnProperty('set')) {
+    intervalSec = parseInt(req.query.set);
+  }
+
+  res.send(intervalSec.toString());
+});
+
 app.post('/:device', (req, res) => {
   console.log(req.params.device);
   console.log(req.body);
@@ -49,11 +59,9 @@ app.post('/:device', (req, res) => {
     return;
   }
 
-  const uploadSec = 3600; // 1hour
-
   let downlink = new Object();
   downlink[req.params.device] = {
-    'downlinkData': toDownlinkData(uploadSec)
+    'downlinkData': toDownlinkData(intervalSec)
   };
 
   res.json(downlink);
