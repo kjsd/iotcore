@@ -1,23 +1,11 @@
 # [START app_yaml]
+env: flex
 runtime: nodejs
-vm: true
-skip_files:
-  - ^(.*/)?.*/node_modules/.*$
-threadsafe: true
-automatic_scaling:
-  min_num_instances: 1
-  max_num_instances: 2
-  cool_down_period_sec: 60
-  cpu_utilization:
-    target_utilization: .7
-resources:
-  cpu: .2
-  memory_gb: .15
 
 # [START env_variables]
 env_variables:
     NODE_ENV: production
-    GCLOUD_PROJECT: 'iotcore-209004'
+    BASE_URL: 'https://iotcore-209004.appspot.com'
 # [END env_variables]
 
 # [END app_yaml]
