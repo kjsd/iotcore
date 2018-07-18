@@ -28,14 +28,15 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 
 const toDownlinkData = function(v) {
-  let s = v.toString(16).split('').reverse().join('');
+  let s = v.toString(16);
   if (s.length > 16) return false;
 
+  let prefix = '';
   for (let i = s.length; i < 16; i++) {
-    s += '0';
+    prefix += '0';
   }
 
-  return s;
+  return prefix + s;
 };
 
 let intervalSec = 3600;
@@ -43,10 +44,11 @@ let intervalSec = 3600;
 app.get('/interval', (req, res) => {
   if (req.query.hasOwnProperty('set')) {
     const v = parseInt(req.query.set);
-    if (!isNaN(v)) {
+    if (!isNaN(v) && toDownlinkData(v)) {
       intervalSec = v;
     }
   }
+  console.log(toDownlinkData(intervalSec));
 
   res.send(intervalSec.toString());
 });
@@ -60,9 +62,11 @@ app.post('/:device', (req, res) => {
     return;
   }
 
+  const emptyData = '0000000000000000';
   let downlink = new Object();
+  const data = toDownlinkData(intervalSec);
   downlink[req.params.device] = {
-    'downlinkData': toDownlinkData(intervalSec)
+    'downlinkData': (data ? data: emptyData)
   };
 
   res.json(downlink);
