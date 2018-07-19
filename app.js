@@ -17,8 +17,8 @@ const bodyParser = require('body-parser');
 const Datastore = require('@google-cloud/datastore');
 const datastore = new Datastore();
 
-const key = datastore.key('intervalSec');
-datastore.save({
+const key = datastore.key(['IoTCore', 'intervalSec']);
+datastore.upsert({
   key: key,
   data: { val: 3600 }
 });
@@ -56,7 +56,7 @@ app.get('/interval', (req, res) => {
       const v = parseInt(req.query.set);
       if (!isNaN(v) && toDownlinkData(v)) {
         intervalSec = v;
-        datastore.save({
+        datastore.upsert({
           key: key,
           data: { val: intervalSec }
         });
