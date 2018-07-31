@@ -1,5 +1,5 @@
 /**
- * @file app.js
+ * @file index.js
 *
  * @brief
  *
@@ -11,9 +11,6 @@
  ***********************************************************************/
 'use strict';
 
-const express = require('express');
-const app = express();
-const bodyParser = require('body-parser');
 const Datastore = require('@google-cloud/datastore');
 const datastore = new Datastore();
 
@@ -23,19 +20,7 @@ datastore.upsert({
   data: { val: 3600 }
 });
 
-if (process.env.NODE_ENV == 'production') {
-  app.use(require('compression')());
-  app.use(require('express-minify')());
-} else {
-  process.env.BASE_URL = 'http://localhost:3000';
-}
-
-app.use(bodyParser.urlencoded({
-    extended: true
-}));
-app.use(bodyParser.json());
-
-const toDownlinkData = function(v) {
+function toDownlinkData(v) {
   let s = v.toString(16);
   if (s.length > 16) return false;
 
@@ -47,8 +32,7 @@ const toDownlinkData = function(v) {
   return prefix + s;
 };
 
-
-app.get('/interval', (req, res) => {
+exports.interval = (req, res) => {
   datastore.get(key, function(err, entity) {
     let intervalSec = entity.val;
 
@@ -66,12 +50,21 @@ app.get('/interval', (req, res) => {
 
     res.send(intervalSec.toString());
   });
-});
+};
 
-app.post('/:device', (req, res) => {
-  console.log(req.params.device);
+exports.devices = (req, res) => {
+  console.log(req.params[0]);
   console.log(req.body);
 
+  const device = req.params[0].substr(1);
+  if (!device) {
+    res.sendStatus(400);
+    return;
+  }
+  if (req.method != 'POST') {
+    res.sendStatus(405);
+    return;
+  }
   if (!req.body.ack) {
     res.sendStatus(204);
     return;
@@ -83,14 +76,10 @@ app.post('/:device', (req, res) => {
     const emptyData = '0000000000000000';
     let downlink = new Object();
     const data = toDownlinkData(intervalSec);
-    downlink[req.params.device] = {
+    downlink[device] = {
       'downlinkData': (data ? data: emptyData)
     };
 
     res.json(downlink);
   });
-});
-
-const server = app.listen(process.env.PORT || '3000', function () {
-  console.log('App listening on port %s', server.address().port);
-});
+};
