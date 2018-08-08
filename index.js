@@ -27,32 +27,33 @@ function toDownlinkData(v) {
 }
 
 function getInfo(id) {
-  const key = datastore.key(['DeviceInfo', id]);
+  if (!id) {
+    return datastore.runQuery(datastore.createQuery('DeviceInfo'));
+  }
 
-  return datastore.get(key);
+  return datastore.get(datastore.key(['DeviceInfo', id])).then(results => {
+    return results[0];
+  });
 }
 
-function saveInfo(id, data) {
-  const key = datastore.key(['DeviceInfo', id]);
-
+function saveInfo(data) {
   return datastore.save({
-    key: key,
+    key: datastore.key(['DeviceInfo', data.id]),
     data: {
+      id: data.id,
       name: data.name,
       interval: data.interval
     }
   });
 }
 
-function getLog(id) {
-  const key = datastore.key(['DeviceLog', id]);
-
-  return datastore.get(key);
+function getLogs(id) {
+  return datastore.runQuery(datastore.createQuery(id));
 }
 
-function saveLog(id, data) {
-  const keyInfo = datastore.key(['DeviceInfo', id]);
-  const keyLog = datastore.key(['DeviceLog', id]);
+function saveLog(data) {
+  const keyInfo = datastore.key(['DeviceInfo', data.id]);
+  const keyLog = datastore.key(data.id);
   const transaction = datastore.transaction();
 
   const saveLogImpl = () => {
@@ -83,6 +84,7 @@ function saveLog(id, data) {
       transaction.save({
         key: keyLog,
         data: {
+          id: data.id,
           time: data.time,
           data: data.data,
           lat: data.lat,
@@ -92,7 +94,7 @@ function saveLog(id, data) {
 
       return transaction.commit();
     }).then(() => {
-      return getInfo(id);
+      return getInfo(data.id);
     }).catch(() => transaction.rollback());
 }
 
@@ -101,39 +103,33 @@ exports.log = (req, res) => {
   console.log(req.body);
 
   const id = req.params[0].substr(1);
-  if (!id) {
-    res.sendStatus(400);
-    return;
-  }
 
   switch (req.method) {
   case 'GET':
-    getLog(id).then(data => res.json(data)).catch(() => res.sendStatus(404));
+    getLogs(id).then(data => res.json(data)).catch(() => res.sendStatus(404));
     return;
 
   case 'POST':
-    const promise = saveLog(id, req.body);
+    const promise = saveLog(req.body);
 
     if (!req.body.ack) {
       res.sendStatus(204);
       return;
     }
 
+    const emptyData = '0000000000000000';
+    let downlink = new Object();
+
     promise.then(info => {
-      const emptyData = '0000000000000000';
-      let downlink = new Object();
       const data = toDownlinkData(info.interval);
       downlink[id] = {
         'downlinkData': (data ? data: emptyData)
       };
-
       res.json(downlink);
     }).catch(() => {
-      let downlink = new Object();
       downlink[id] = {
-        'downlinkData': toDownlinkData('0000000000000000')
+        'downlinkData': emptyData
       };
-
       res.json(downlink);
     });
     return;
@@ -149,10 +145,6 @@ exports.info = (req, res) => {
   console.log(req.body);
 
   const id = req.params[0].substr(1);
-  if (!id) {
-    res.sendStatus(400);
-    return;
-  }
 
   switch (req.method) {
   case 'GET':
@@ -160,9 +152,18 @@ exports.info = (req, res) => {
     return;
 
   case 'POST':
-    saveInfo(id, req.body).then(() => res.sendStatus(200))
+    saveInfo(req.body).then(() => res.sendStatus(200))
       .catch(() => res.sendStatus(500));
     return;
+
+  case 'PUT':
+    if (!id) {
+      res.sendStatus(400);
+      return;
+    }
+    
+    saveInfo(req.body).then(() => res.sendStatus(200))
+      .catch(() => res.sendStatus(500));
 
   default:
     res.sendStatus(405);
