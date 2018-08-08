@@ -59,8 +59,8 @@ function saveLog(data) {
 
   return transaction.run()
     .then(() => transaction.get(keyInfo))
-    .then((err, entity) => {
-      if (err) {
+    .then(results => {
+      if (!results[0]) {
         transaction.save({
           key: keyInfo,
           data: {
