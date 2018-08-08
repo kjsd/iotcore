@@ -60,10 +60,11 @@ function saveLog(data) {
   return transaction.run()
     .then(() => transaction.get(keyInfo))
     .then(results => {
-      if (!results[0]) {
+      if (!results[0].hasOwnProperty('device')) {
         transaction.save({
           key: keyInfo,
           data: {
+            device: data.device,
             name: '__DEFAULT__',
             interval: 3600
           }
@@ -93,7 +94,13 @@ exports.log = (req, res) => {
 
   switch (req.method) {
   case 'GET':
-    getLogs(id).then(data => res.json(data)).catch(() => res.sendStatus(500));
+    getLogs(id).then(data => {
+      if (!data || (data.length == 0)) {
+        res.sendStatus(404);
+      } else {
+        res.json(data);
+      }
+    }).catch(() => res.sendStatus(500));
     return;
 
   case 'POST':
@@ -140,7 +147,13 @@ exports.info = (req, res) => {
 
   switch (req.method) {
   case 'GET':
-    getInfo(id).then(data => res.json(data)).catch(() => res.sendStatus(500));
+    getInfo(id).then(data => {
+      if (!data || (data.length == 0)) {
+        res.sendStatus(id ? 404: 204);
+      } else {
+        res.json(data);
+      }
+    }).catch(() => res.sendStatus(500));
     return;
 
   case 'POST':
