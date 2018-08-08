@@ -46,8 +46,8 @@ function saveInfo(data) {
   });
 }
 
-function getLogs(id) {
-  return datastore.runQuery(datastore.createQuery(id)).then(results => {
+function getLogs(device) {
+  return datastore.runQuery(datastore.createQuery(device)).then(results => {
     return results[0];
   });
 }
@@ -86,6 +86,10 @@ exports.log = (req, res) => {
   console.log(req.body);
 
   const id = req.params[0].substr(1);
+  if (!id) {
+    res.sendStatus(400);
+    return;
+  }
 
   switch (req.method) {
   case 'GET':
@@ -93,6 +97,11 @@ exports.log = (req, res) => {
     return;
 
   case 'POST':
+    if (id != req.body.device) {
+      res.sendStatus(400);
+      return;
+    }
+
     const promise = saveLog(req.body);
 
     if (!req.body.ack) {
