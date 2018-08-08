@@ -26,21 +26,20 @@ function toDownlinkData(v) {
   return prefix + s;
 }
 
-function getInfo(id) {
-  if (!id) {
-    return datastore.runQuery(datastore.createQuery('DeviceInfo'));
-  }
+function getInfo(device) {
+  const promise = device ? datastore.get(datastore.key(['DeviceInfo', device])):
+        datastore.runQuery(datastore.createQuery('DeviceInfo'));
 
-  return datastore.get(datastore.key(['DeviceInfo', id])).then(results => {
+  return promise.then(results => {
     return results[0];
   });
 }
 
 function saveInfo(data) {
   return datastore.save({
-    key: datastore.key(['DeviceInfo', data.id]),
+    key: datastore.key(['DeviceInfo', data.device]),
     data: {
-      id: data.id,
+      device: data.device,
       name: data.name,
       interval: data.interval
     }
@@ -48,25 +47,15 @@ function saveInfo(data) {
 }
 
 function getLogs(id) {
-  return datastore.runQuery(datastore.createQuery(id));
+  return datastore.runQuery(datastore.createQuery(id)).then(results => {
+    return results[0];
+  });
 }
 
 function saveLog(data) {
-  const keyInfo = datastore.key(['DeviceInfo', data.id]);
-  const keyLog = datastore.key(data.id);
+  const keyInfo = datastore.key(['DeviceInfo', data.device]);
+  const keyLog = datastore.key(data.device);
   const transaction = datastore.transaction();
-
-  const saveLogImpl = () => {
-    return transaction.save({
-      key: keyLog,
-      data: {
-        time: data.time,
-        data: data.data,
-        lat: data.lat,
-        lng: data.lng
-      }
-    });
-  };
 
   return transaction.run()
     .then(() => transaction.get(keyInfo))
@@ -83,18 +72,12 @@ function saveLog(data) {
 
       transaction.save({
         key: keyLog,
-        data: {
-          id: data.id,
-          time: data.time,
-          data: data.data,
-          lat: data.lat,
-          lng: data.lng
-        }
+        data: data
       });
 
       return transaction.commit();
     }).then(() => {
-      return getInfo(data.id);
+      return getInfo(data.device);
     }).catch(() => transaction.rollback());
 }
 
@@ -106,7 +89,7 @@ exports.log = (req, res) => {
 
   switch (req.method) {
   case 'GET':
-    getLogs(id).then(data => res.json(data)).catch(() => res.sendStatus(404));
+    getLogs(id).then(data => res.json(data)).catch(() => res.sendStatus(500));
     return;
 
   case 'POST':
@@ -152,12 +135,16 @@ exports.info = (req, res) => {
     return;
 
   case 'POST':
+    if (!req.body.device) {
+      res.sendStatus(400);
+      return;
+    }
     saveInfo(req.body).then(() => res.sendStatus(200))
       .catch(() => res.sendStatus(500));
     return;
 
   case 'PUT':
-    if (!id) {
+    if (!id || (id != req.body.device)) {
       res.sendStatus(400);
       return;
     }
