@@ -26,30 +26,39 @@ function toDownlinkData(v) {
   return prefix + s;
 }
 
+function mergeInfo(device, data) {
+  return {
+    device: device,
+    name: (data && data.hasOwnProperty('name') ? data.name: '__DEFAULT__'),
+    interval: (data && data.hasOwnProperty('interval') ? data.interval: 3600)
+  };
+}
+
 function getInfo(device) {
   const promise = device ? datastore.get(datastore.key(['DeviceInfo', device])):
         datastore.runQuery(datastore.createQuery('DeviceInfo'));
 
-  return promise.then(results => {
-    return results[0];
-  });
+  return promise.then(results => results[0]);
 }
 
 function saveInfo(data) {
-  return datastore.save({
-    key: datastore.key(['DeviceInfo', data.device]),
-    data: {
-      device: data.device,
-      name: data.name,
-      interval: data.interval
-    }
-  });
+  const key = datastore.key(['DeviceInfo', data.device]);
+  const transaction = datastore.transaction();
+
+  return transaction.run()
+    .then(() => transaction.get(key))
+    .then(results => {
+      transaction.save({
+        key: key,
+        data: mergeInfo(data.device, data)
+      });
+      return transaction.commit();
+    }).catch(() => transaction.rollback());
 }
 
 function getLogs(device) {
-  return datastore.runQuery(datastore.createQuery(device)).then(results => {
-    return results[0];
-  });
+  return datastore.runQuery(datastore.createQuery(device))
+    .then(results => results[0]);
 }
 
 function saveLog(data) {
@@ -63,23 +72,14 @@ function saveLog(data) {
       if (!results[0].hasOwnProperty('device')) {
         transaction.save({
           key: keyInfo,
-          data: {
-            device: data.device,
-            name: '__DEFAULT__',
-            interval: 3600
-          }
+          data: mergeInfo(data.device, null)
         });
       }
-
-      transaction.save({
-        key: keyLog,
-        data: data
-      });
+      transaction.save({ key: keyLog, data: data });
 
       return transaction.commit();
-    }).then(() => {
-      return getInfo(data.device);
-    }).catch(() => transaction.rollback());
+    }).then(() => getInfo(data.device))
+    .catch(() => transaction.rollback());
 }
 
 exports.log = (req, res) => {
