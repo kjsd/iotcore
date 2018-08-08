@@ -1,6 +1,6 @@
 /**
  * @file index.js
-*
+ *
  * @brief
  *
  * @author Kenji MINOURA / info@kandj.org
@@ -74,7 +74,8 @@ function saveLog(data) {
   return transaction.run()
     .then(() => transaction.get(keyInfo))
     .then(results => {
-      if (!results[0].hasOwnProperty('device')) {
+      console.log(results);
+      if (!results[0] || !results[0].hasOwnProperty('device')) {
         transaction.save({
           key: keyInfo,
           data: mergeInfo(data.device, null)
