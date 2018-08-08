@@ -27,11 +27,16 @@ function toDownlinkData(v) {
 }
 
 function mergeInfo(device, data) {
-  return {
+  let v = {
     device: device,
-    name: (data && data.hasOwnProperty('name') ? data.name: '__DEFAULT__'),
-    interval: (data && data.hasOwnProperty('interval') ? data.interval: 3600)
+    name: '__DEFAULT__',
+    interval: 3600
   };
+  if (data) {
+    if (data.hasOwnProperty('name')) v.name = data.name;
+    if (data.hasOwnProperty('interval')) v.interval = data.interval;
+  }
+  return v;
 }
 
 function getInfo(device) {
