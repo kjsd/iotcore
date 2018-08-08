@@ -131,7 +131,7 @@ exports.info = (req, res) => {
 
   switch (req.method) {
   case 'GET':
-    getInfo(id).then(data => res.json(data)).catch(() => res.sendStatus(404));
+    getInfo(id).then(data => res.json(data)).catch(() => res.sendStatus(500));
     return;
 
   case 'POST':
