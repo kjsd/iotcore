@@ -180,6 +180,7 @@ exports.info = (req, res) => {
     
     saveInfo(req.body).then(() => res.sendStatus(200))
       .catch(() => res.sendStatus(500));
+    return;
 
   default:
     res.sendStatus(405);
