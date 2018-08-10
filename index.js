@@ -118,6 +118,7 @@ exports.log = (req, res) => {
     const promise = saveLog(req.body);
 
     if (!req.body.ack) {
+      promise.all();
       res.sendStatus(204);
       return;
     }
