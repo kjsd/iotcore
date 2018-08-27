@@ -30,10 +30,14 @@ function mergeInfo(device, data) {
   let v = {
     device: device,
     name: '__DEFAULT__',
+    type: '__DEFAULT__',
+    client: '__DEFAULT__',
     interval: 3600
   };
   if (data) {
     if (data.hasOwnProperty('name')) v.name = data.name;
+    if (data.hasOwnProperty('type')) v.type = data.type;
+    if (data.hasOwnProperty('client')) v.client = data.client;
     if (data.hasOwnProperty('interval')) v.interval = data.interval;
   }
   return v;
