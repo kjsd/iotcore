@@ -114,6 +114,11 @@ exports.log = (req, res) => {
     return;
 
   case 'POST':
+    if (req.body.hasOwnProperty('module') &&
+        !req.body.hasOwnProperty('device')) {
+      req.body.device = req.body.module;
+    }
+
     if (id != req.body.device) {
       res.sendStatus(400);
       return;

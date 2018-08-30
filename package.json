@@ -1,21 +1,21 @@
 {
-  "name": "iotcore",
+  "name": "iotcore_serv",
   "version": "1.0.0",
-  "description": "iotcore",
+  "description": "iotcore_serv",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/kjsd/iotcore.git"
+    "url": "git+ssh://git@github.com/kjsd/iotcore_serv.git"
   },
   "author": "Kenji MINOURA",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/kjsd/iotcore/issues"
+    "url": "https://github.com/kjsd/iotcore_serv/issues"
   },
-  "homepage": "https://github.com/kjsd/iotcore#readme",
+  "homepage": "https://github.com/kjsd/iotcore_serv#readme",
   "dependencies": {
     "@google-cloud/datastore": "^1.4.1"
   }
