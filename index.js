@@ -96,14 +96,14 @@ exports.log = (req, res) => {
   console.log(req.params[0]);
   console.log(req.body);
 
-  const id = req.params[0].substr(1);
-  if (!id) {
-    res.sendStatus(400);
-    return;
-  }
-
   switch (req.method) {
-  case 'GET':
+  case 'GET': {
+    const id = req.params[0].substr(1);
+    if (!id) {
+      res.sendStatus(400);
+      return;
+    }
+
     getLogs(id).then(data => {
       if (!data || (data.length == 0)) {
         res.sendStatus(404);
@@ -111,19 +111,15 @@ exports.log = (req, res) => {
         res.json(data);
       }
     }).catch(() => res.sendStatus(500));
+
     return;
-
-  case 'POST':
-    if (req.body.hasOwnProperty('module') &&
-        !req.body.hasOwnProperty('device')) {
-      req.body.device = req.body.module;
-    }
-
-    if (id != req.body.device) {
+  }
+  case 'POST': {
+    if (!req.body.device) {
       res.sendStatus(400);
       return;
     }
-
+    const id = req.body.device;
     const promise = saveLog(req.body);
 
     if (!req.body.ack) {
@@ -148,7 +144,7 @@ exports.log = (req, res) => {
       res.json(downlink);
     });
     return;
-
+  }
   default:
     res.sendStatus(405);
     return;
