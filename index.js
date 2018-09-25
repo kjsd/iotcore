@@ -92,101 +92,117 @@ function saveLog(data) {
     .catch(() => transaction.rollback());
 }
 
+function reqGetLog(req, res) {
+  const id = req.params[0].substr(1);
+  if (!id) {
+    res.sendStatus(400);
+    return;
+  }
+
+  getLogs(id).then(data => {
+    if (!data || (data.length == 0)) {
+      res.sendStatus(404);
+    } else {
+      res.json(data);
+    }
+  }).catch(() => res.sendStatus(500));
+}
+
+function reqPostLog(req, res) {
+  if (!req.body.device) {
+    res.sendStatus(400);
+    return;
+  }
+  const id = req.body.device;
+  const promise = saveLog(req.body);
+
+  if (!req.body.ack) {
+    Promise.resolve(promise);
+    res.sendStatus(204);
+    return;
+  }
+
+  const emptyData = '0000000000000000';
+  let downlink = new Object();
+
+  promise.then(info => {
+    const data = toDownlinkData(info.interval);
+    downlink[id] = {
+      'downlinkData': (data ? data: emptyData)
+    };
+    res.json(downlink);
+  }).catch(() => {
+    downlink[id] = {
+      'downlinkData': emptyData
+    };
+    res.json(downlink);
+  });
+}
+
 exports.log = (req, res) => {
-  console.log(req.params[0]);
+  console.log(req.params);
   console.log(req.body);
 
   switch (req.method) {
-  case 'GET': {
-    const id = req.params[0].substr(1);
-    if (!id) {
-      res.sendStatus(400);
-      return;
-    }
-
-    getLogs(id).then(data => {
-      if (!data || (data.length == 0)) {
-        res.sendStatus(404);
-      } else {
-        res.json(data);
-      }
-    }).catch(() => res.sendStatus(500));
-
+  case 'GET':
+    reqGetLog(req, res);
     return;
-  }
-  case 'POST': {
-    if (!req.body.device) {
-      res.sendStatus(400);
-      return;
-    }
-    const id = req.body.device;
-    const promise = saveLog(req.body);
-
-    if (!req.body.ack) {
-      Promise.resolve(promise);
-      res.sendStatus(204);
-      return;
-    }
-
-    const emptyData = '0000000000000000';
-    let downlink = new Object();
-
-    promise.then(info => {
-      const data = toDownlinkData(info.interval);
-      downlink[id] = {
-        'downlinkData': (data ? data: emptyData)
-      };
-      res.json(downlink);
-    }).catch(() => {
-      downlink[id] = {
-        'downlinkData': emptyData
-      };
-      res.json(downlink);
-    });
+  case 'POST':
+    reqPostLog(req, res);
     return;
-  }
   default:
     res.sendStatus(405);
     return;
   }
 };
 
-exports.info = (req, res) => {
-  console.log(req.params[0]);
-  console.log(req.body);
-
+function reqGetInfo(req, res) {
   const id = req.params[0].substr(1);
+
+  getInfo(id).then(data => {
+    if (!data || (data.length == 0)) {
+      res.sendStatus(id ? 404: 204);
+    } else {
+      res.json(data);
+    }
+  }).catch(() => res.sendStatus(500));
+}
+
+function reqPostInfo(req, res) {
+  if (!req.body.device) {
+    res.sendStatus(400);
+    return;
+  }
+  saveInfo(req.body).then(() => res.sendStatus(200))
+    .catch(() => res.sendStatus(500));
+}
+
+function reqPutInfo(req, res) {
+  const id = req.params[0].substr(1);
+
+  if (!id || (id != req.body.device)) {
+    res.sendStatus(400);
+    return;
+  }
+  
+  saveInfo(req.body).then(() => res.sendStatus(200))
+    .catch(() => res.sendStatus(500));
+}
+
+exports.info = (req, res) => {
+  console.log(req.params);
+  console.log(req.body);
 
   switch (req.method) {
   case 'GET':
-    getInfo(id).then(data => {
-      if (!data || (data.length == 0)) {
-        res.sendStatus(id ? 404: 204);
-      } else {
-        res.json(data);
-      }
-    }).catch(() => res.sendStatus(500));
+    reqGetInfo(req, res);
     return;
-
   case 'POST':
-    if (!req.body.device) {
-      res.sendStatus(400);
-      return;
-    }
-    saveInfo(req.body).then(() => res.sendStatus(200))
-      .catch(() => res.sendStatus(500));
+    reqPostInfo(req, res);
     return;
-
   case 'PUT':
-    if (!id || (id != req.body.device)) {
-      res.sendStatus(400);
-      return;
-    }
-    
-    saveInfo(req.body).then(() => res.sendStatus(200))
-      .catch(() => res.sendStatus(500));
+    reqPutInfo(req, res);
     return;
-
   default:
     res.sendStatus(405);
     return;
