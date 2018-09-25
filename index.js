@@ -151,6 +151,7 @@ function reqPostLog(req, res) {
 
 exports.log = (req, res) => {
   console.log(req.params);
+  console.log(req.query);
   console.log(req.body);
 
   switch (req.method) {
@@ -202,6 +203,7 @@ function reqPutInfo(req, res) {
 
 exports.info = (req, res) => {
   console.log(req.params);
+  console.log(req.query);
   console.log(req.body);
 
   switch (req.method) {
