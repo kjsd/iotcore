@@ -44,8 +44,18 @@ function mergeInfo(device, data) {
 }
 
 function getInfo(device) {
-  const promise = device ? datastore.get(datastore.key(['DeviceInfo', device])):
-        datastore.runQuery(datastore.createQuery('DeviceInfo'));
+  const promise = datastore.get(datastore.key(['DeviceInfo', device]));
+
+  return promise.then(results => results[0]);
+}
+
+function searchInfo(filter) {
+  let query = datastore.createQuery('DeviceInfo');
+  for (let k in filter) {
+    query = query.filter(k, '=', filter[k]);
+  }
+
+  const promise = datastore.runQuery(query);
 
   return promise.then(results => results[0]);
 }
@@ -159,9 +169,10 @@ exports.log = (req, res) => {
 function reqGetInfo(req, res) {
   const id = req.params[0].substr(1);
 
-  getInfo(id).then(data => {
-    if (!data || (data.length == 0)) {
-      res.sendStatus(id ? 404: 204);
+  const promise = id ? getInfo(id): searchInfo(req.query);
+  promise.then(data => {
+    if (!data) {
+      res.sendStatus(404);
     } else {
       res.json(data);
     }
